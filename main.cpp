@@ -23,6 +23,9 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     MainWindow mainWin;
     mainWin.show();
+    for (int i = 1; i < argc; ++i) {
+      mainWin.addChild(argv[i]);
+    }
     return app.exec();
 }
 

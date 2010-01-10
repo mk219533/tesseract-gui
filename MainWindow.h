@@ -32,6 +32,8 @@ Q_OBJECT
 public:
   MainWindow();
 
+  void addChild(const QString &imageFileName);
+
 protected:
 
   void closeEvent(QCloseEvent *event);
@@ -52,11 +54,12 @@ private slots:
     void joinSymbol();
     void deleteSymbol();
     void about();
-    void shortcuts();
     void handleClose(int i);
     void updateMenus();
-    void updateViewMenu();
+    void updateFileMenu();
     void updateCommandActions();
+    void updateTabTitle();
+    void updateSaveAction();
 
 private:
     ChildWidget *activeChild();
@@ -73,7 +76,6 @@ private:
     QMenu *fileMenu;
     QMenu *editMenu;
     QMenu *viewMenu;
-    QMenu *commandMenu;
     QMenu *helpMenu;
 
     QToolBar *fileToolBar;
@@ -100,7 +102,6 @@ private:
     QAction *joinAct;
     QAction *deleteAct;
     QAction *aboutAct;
-    QAction *shortcutsAct;
 };
 
 #endif /* MAINWINDOW_H_ */

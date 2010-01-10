@@ -23,6 +23,9 @@ class QGraphicsView;
 class QAbstractItemModel;
 class QItemSelectionModel;
 class QTableView;
+class QGraphicsItem;
+class QGraphicsRectItem;
+//class QStandardItem;
 QT_END_NAMESPACE
 
 class ChildWidget : public QSplitter
@@ -51,8 +54,10 @@ public:
   QString userFriendlyCurrentFile();
 
 private slots:
-    void documentWasModified();
-    void emitBoxChanged();
+  void documentWasModified();
+  void emitBoxChanged();
+  void drawSelectionRects();
+//  void updateModel(QStandardItem *);
 
 protected:
   void closeEvent(QCloseEvent *event);
@@ -66,10 +71,18 @@ protected:
 
 signals:
   void boxChanged();
+  void modifiedChanged();
 
 protected:
-  QGraphicsScene *scene;
-  QGraphicsView *view;
+  QGraphicsScene *imageScene;
+  QGraphicsView *imageView;
+  QGraphicsItem * imageItem;
+  QGraphicsRectItem *imageSelectionRect;
+/*
+  QGraphicsScene *textScene;
+  QGraphicsView *textView;
+  QGraphicsRectItem *textSelectionRect;
+//*/
   QTableView *table;
 
   QAbstractItemModel *model;
@@ -79,10 +92,7 @@ protected:
   QString boxFile;
 
   bool modified;
-  bool bold;
-  bool italic;
-  bool underline;
-
+  int imageHeight;
 };
 
 #endif /* CHILDWIDGET_H_ */

@@ -24,6 +24,8 @@ MainWindow::MainWindow()
   tabWidget->setMovable(true);
   connect(tabWidget, SIGNAL(tabCloseRequested(int)), this, SLOT(handleClose(int)));
   connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(updateMenus()));
+  connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(updateCommandActions()));
+  connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(updateSaveAction()));
 
   setCentralWidget(tabWidget);
 
@@ -34,6 +36,8 @@ MainWindow::MainWindow()
   createMenus();
   createToolBars();
   updateMenus();
+  updateCommandActions();
+  updateSaveAction();
   readSettings();
   setUnifiedTitleAndToolBarOnMac(true);
 }
@@ -62,14 +66,22 @@ void MainWindow::open()
       QString(),
       QString(),
       "TIFF Images (*.tif *.tiff)");
-  if (!imageFile.isEmpty()) {
+  addChild(imageFile);
+}
+
+void MainWindow::addChild(const QString &imageFileName)
+{
+  if (!imageFileName.isEmpty()) {
     //TODO sprawdzic czy nie mamy otwartego takiego pliku
 
     ChildWidget *child = new ChildWidget;
-    if (child->loadImage(imageFile)) {
+    if (child->loadImage(imageFileName)) {
       statusBar()->showMessage(tr("File loaded"), 2000);
       tabWidget->setCurrentIndex(tabWidget->addTab(child, child->userFriendlyCurrentFile()));
       connect(child, SIGNAL(boxChanged()), this, SLOT(updateCommandActions()));
+      connect(child, SIGNAL(modifiedChanged()), this, SLOT(updateTabTitle()));
+      connect(child, SIGNAL(modifiedChanged()), this, SLOT(updateSaveAction()));
+
     } else {
       child->close();
     }
@@ -174,23 +186,16 @@ void MainWindow::deleteSymbol()
   }
 }
 
-
-//TODO
 void MainWindow::about()
 {
-   QMessageBox::about(this, tr("About Application"),
-            tr("The <b>Application</b> example demonstrates how to "
-               "write modern GUI applications using Qt, with a menu bar, "
-               "toolbars, and a status bar."));
-}
-
-//TODO
-void MainWindow::shortcuts()
-{
-   QMessageBox::about(this, tr("About Application"),
-            tr("The <b>Application</b> example demonstrates how to "
-               "write modern GUI applications using Qt, with a menu bar, "
-               "toolbars, and a status bar."));
+   QMessageBox::about(
+      this,
+      tr("About"),
+      tr(
+          "tesseract-gui\n\ntesseract box files editor\n\nCopyright 2010 Marcel Kolodziejczyk\n\n\"THE BEER-WARE LICENSE\" (Revision 42):\n"
+            "<mk219533 (a) students.mimuw.edu.pl> wrote this file. As long as you retain "
+            "this notice you can do whatever you want with this stuff. If we meet some day, "
+            "and you think this stuff is worth it, you can buy me a beer in return."));
 }
 
 void MainWindow::handleClose(int i)
@@ -201,7 +206,6 @@ void MainWindow::handleClose(int i)
 
 void MainWindow::updateMenus()
 {
-  saveAct->setEnabled((activeChild()) ? activeChild()->isModified() : false);
   closeAct->setEnabled(activeChild() != 0);
   closeAllAct->setEnabled(activeChild() != 0);
   nextAct->setEnabled(activeChild() != 0);
@@ -209,7 +213,6 @@ void MainWindow::updateMenus()
   separatorAct->setVisible(activeChild() != 0);
   zoomInAct->setEnabled(activeChild() != 0);
   zoomOutAct->setEnabled(activeChild() != 0);
-  updateCommandActions();
 }
 
 void MainWindow::updateCommandActions()
@@ -226,15 +229,31 @@ void MainWindow::updateCommandActions()
   deleteAct->setEnabled(enable);
 }
 
-void MainWindow::updateViewMenu()
+void MainWindow::updateSaveAction()
 {
-  viewMenu->clear();
-  viewMenu->addAction(nextAct);
-  viewMenu->addAction(previousAct);
-  viewMenu->addSeparator();
-  viewMenu->addAction(zoomInAct);
-  viewMenu->addAction(zoomOutAct);
-  viewMenu->addAction(separatorAct);
+  saveAct->setEnabled((activeChild()) ? activeChild()->isModified() : false);
+}
+
+void MainWindow::updateTabTitle()
+{
+  if (activeChild()) {
+    QString title = activeChild()->userFriendlyCurrentFile();
+    if (activeChild()->isModified())
+      title += " *";
+    tabWidget->setTabText(tabWidget->currentIndex(), title);
+  }
+}
+
+
+void MainWindow::updateFileMenu()
+{
+  fileMenu->clear();
+  fileMenu->addAction(openAct);
+  fileMenu->addAction(saveAct);
+  fileMenu->addSeparator();
+  fileMenu->addAction(closeAct);
+  fileMenu->addAction(closeAllAct);
+  fileMenu->addAction(separatorAct);
 
   separatorAct->setVisible(tabWidget->count() > 0);
 
@@ -247,12 +266,16 @@ void MainWindow::updateViewMenu()
     } else {
       text = tr("%1 %2").arg(i + 1) .arg(child->userFriendlyCurrentFile());
     }
-    QAction *action = viewMenu->addAction(text);
+    QAction *action = fileMenu->addAction(text);
     action->setCheckable(true);
     action ->setChecked(child == activeChild());
     connect(action, SIGNAL(triggered()), windowMapper, SLOT(map()));
     windowMapper->setMapping(action, i);
   }
+
+  fileMenu->addSeparator();
+  fileMenu->addAction(exitAct);
+
 }
 
 void MainWindow::createActions()
@@ -277,6 +300,9 @@ void MainWindow::createActions()
   closeAllAct->setShortcut(tr("Ctrl+Shift+W"));
   closeAllAct->setStatusTip(tr("Close all the tabs"));
   connect(closeAllAct, SIGNAL(triggered()), this, SLOT(closeAllTabs()));
+
+  separatorAct = new QAction(this);
+  separatorAct->setSeparator(true);
 
   exitAct = new QAction(tr("E&xit"), this);
   exitAct->setShortcut(tr("Ctrl+Q"));
@@ -316,10 +342,6 @@ void MainWindow::createActions()
   previousAct->setStatusTip(tr("Move the focus to the previous window"));
   connect(previousAct, SIGNAL(triggered()), this, SLOT(previousTab()));
 
-  separatorAct = new QAction(this);
-  separatorAct->setSeparator(true);
-
-
   splitAct = new QAction(tr("&Split symbol"), this);
   splitAct->setShortcut(tr("Ctrl+2"));
   connect(splitAct, SIGNAL(triggered()), this, SLOT(splitSymbol()));
@@ -335,42 +357,34 @@ void MainWindow::createActions()
   aboutAct = new QAction(tr("&About"), this);
   aboutAct->setStatusTip(tr("Show the application's About box"));
   connect(aboutAct, SIGNAL(triggered()), this, SLOT(about()));
-
-  shortcutsAct = new QAction(tr("&Keyboard shortcuts"), this);
-  shortcutsAct->setStatusTip(tr("Show the application's shortcuts"));
-  connect(aboutAct, SIGNAL(triggered()), this, SLOT(about()));
 }
 
 void MainWindow::createMenus()
 {
-    fileMenu = menuBar()->addMenu(tr("&File"));
-    fileMenu->addAction(openAct);
-    fileMenu->addAction(saveAct);
-    fileMenu->addSeparator();
-    fileMenu->addAction(closeAct);
-    fileMenu->addAction(closeAllAct);
-    fileMenu->addSeparator();
-    fileMenu->addAction(exitAct);
+  fileMenu = menuBar()->addMenu(tr("&File"));
+  updateFileMenu();
+  connect(fileMenu, SIGNAL(aboutToShow()), this, SLOT(updateFileMenu()));
 
-    editMenu = menuBar()->addMenu(tr("&Edit"));
-    editMenu->addAction(boldAct);
-    editMenu->addAction(italicAct);
-    editMenu->addAction(underlineAct);
+  editMenu = menuBar()->addMenu(tr("&Edit"));
+  editMenu->addAction(boldAct);
+  editMenu->addAction(italicAct);
+  editMenu->addAction(underlineAct);
+  editMenu->addSeparator();
+  editMenu->addAction(splitAct);
+  editMenu->addAction(joinAct);
+  editMenu->addAction(deleteAct);
 
-    viewMenu = menuBar()->addMenu(tr("&View"));
-    updateViewMenu();
-    connect(viewMenu, SIGNAL(aboutToShow()), this, SLOT(updateViewMenu()));
+  viewMenu = menuBar()->addMenu(tr("&View"));
+  viewMenu->addAction(nextAct);
+  viewMenu->addAction(previousAct);
+  viewMenu->addSeparator();
+  viewMenu->addAction(zoomInAct);
+  viewMenu->addAction(zoomOutAct);
 
-    commandMenu = menuBar()->addMenu(tr("&Command"));
-    commandMenu->addAction(splitAct);
-    commandMenu->addAction(joinAct);
-    commandMenu->addAction(deleteAct);
+  menuBar()->addSeparator();
 
-    menuBar()->addSeparator();
-
-    helpMenu = menuBar()->addMenu(tr("&Help"));
-    helpMenu->addAction(aboutAct);
-    helpMenu->addAction(shortcutsAct);
+  helpMenu = menuBar()->addMenu(tr("&Help"));
+  helpMenu->addAction(aboutAct);
 }
 
 void MainWindow::createToolBars()
