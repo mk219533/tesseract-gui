@@ -72,7 +72,14 @@ void MainWindow::open()
 void MainWindow::addChild(const QString &imageFileName)
 {
   if (!imageFileName.isEmpty()) {
-    //TODO sprawdzic czy nie mamy otwartego takiego pliku
+    QString canonicalImageFileName = QFileInfo(imageFileName).canonicalFilePath();
+    for (int i = 0; i < tabWidget->count(); ++i) {
+      ChildWidget *child = qobject_cast<ChildWidget *> (tabWidget->widget(i));
+      if (canonicalImageFileName == child->canonicalImageFileName()) {
+        tabWidget->setCurrentIndex(i);
+        return;
+      }
+    }
 
     ChildWidget *child = new ChildWidget;
     if (child->loadImage(imageFileName)) {
@@ -81,7 +88,6 @@ void MainWindow::addChild(const QString &imageFileName)
       connect(child, SIGNAL(boxChanged()), this, SLOT(updateCommandActions()));
       connect(child, SIGNAL(modifiedChanged()), this, SLOT(updateTabTitle()));
       connect(child, SIGNAL(modifiedChanged()), this, SLOT(updateSaveAction()));
-
     } else {
       child->close();
     }
@@ -291,7 +297,7 @@ void MainWindow::createActions()
   saveAct->setEnabled(false);
   connect(saveAct, SIGNAL(triggered()), this, SLOT(save()));
 
-  closeAct = new QAction(tr("Cl&ose"), this);
+  closeAct = new QAction(QIcon(":/images/close.png"), tr("Cl&ose"), this);
   closeAct->setShortcut(QKeySequence::Close);
   closeAct->setStatusTip(tr("Close the active tab"));
   connect(closeAct, SIGNAL(triggered()), this, SLOT(closeActiveTab()));
@@ -304,7 +310,7 @@ void MainWindow::createActions()
   separatorAct = new QAction(this);
   separatorAct->setSeparator(true);
 
-  exitAct = new QAction(tr("E&xit"), this);
+  exitAct = new QAction(QIcon(":/images/exit.png"), tr("E&xit"), this);
   exitAct->setShortcut(tr("Ctrl+Q"));
   exitAct->setStatusTip(tr("Exit the application"));
   connect(exitAct, SIGNAL(triggered()), this, SLOT(close()));
@@ -332,12 +338,12 @@ void MainWindow::createActions()
   zoomOutAct->setShortcut(QKeySequence::ZoomOut);
   connect(zoomOutAct, SIGNAL(triggered()), this, SLOT(zoomOut()));
 
-  nextAct = new QAction(tr("Ne&xt"), this);
+  nextAct = new QAction(QIcon(":/images/next.png"), tr("Ne&xt"), this);
   nextAct->setShortcuts(QKeySequence::NextChild);
   nextAct->setStatusTip(tr("Move the focus to the next window"));
   connect(nextAct, SIGNAL(triggered()), this, SLOT(nextTab()));
 
-  previousAct = new QAction(tr("Pre&vious"), this);
+  previousAct = new QAction(QIcon(":/images/previous.png"), tr("Pre&vious"), this);
   previousAct->setShortcuts(QKeySequence::PreviousChild);
   previousAct->setStatusTip(tr("Move the focus to the previous window"));
   connect(previousAct, SIGNAL(triggered()), this, SLOT(previousTab()));
@@ -354,7 +360,7 @@ void MainWindow::createActions()
   deleteAct->setShortcut(QKeySequence::Delete);
   connect(deleteAct, SIGNAL(triggered()), this, SLOT(deleteSymbol()));
 
-  aboutAct = new QAction(tr("&About"), this);
+  aboutAct = new QAction(QIcon(":/images/about.png"), tr("&About"), this);
   aboutAct->setStatusTip(tr("Show the application's About box"));
   connect(aboutAct, SIGNAL(triggered()), this, SLOT(about()));
 }
@@ -389,18 +395,21 @@ void MainWindow::createMenus()
 
 void MainWindow::createToolBars()
 {
-    fileToolBar = addToolBar(tr("File"));
-    fileToolBar->addAction(openAct);
-    fileToolBar->addAction(saveAct);
+  fileToolBar = addToolBar(tr("File"));
+  fileToolBar->addAction(openAct);
+  fileToolBar->addAction(saveAct);
+  fileToolBar->addAction(closeAct);
 
-    viewToolBar = addToolBar(tr("View"));
-    viewToolBar->addAction(zoomInAct);
-    viewToolBar->addAction(zoomOutAct);
+  viewToolBar = addToolBar(tr("View"));
+  viewToolBar->addAction(previousAct);
+  viewToolBar->addAction(nextAct);
+  viewToolBar->addAction(zoomInAct);
+  viewToolBar->addAction(zoomOutAct);
 
-    editToolBar = addToolBar(tr("Edit"));
-    editToolBar->addAction(boldAct);
-    editToolBar->addAction(italicAct);
-    editToolBar->addAction(underlineAct);
+  editToolBar = addToolBar(tr("Edit"));
+  editToolBar->addAction(boldAct);
+  editToolBar->addAction(italicAct);
+  editToolBar->addAction(underlineAct);
 }
 
 void MainWindow::readSettings()

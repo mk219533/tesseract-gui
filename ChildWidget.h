@@ -25,7 +25,6 @@ class QItemSelectionModel;
 class QTableView;
 class QGraphicsItem;
 class QGraphicsRectItem;
-//class QStandardItem;
 QT_END_NAMESPACE
 
 class ChildWidget : public QSplitter
@@ -35,14 +34,18 @@ class ChildWidget : public QSplitter
 public:
   ChildWidget(QWidget * parent = 0);
 
-  bool loadImage(const QString &fileName);
-  bool loadBoxes(const QString &fileName);
-  bool save();
   bool isModified() { return modified; }
   bool isBoxSelected();
   bool isBold();
   bool isItalic();
   bool isUnderLine();
+
+  QString userFriendlyCurrentFile();
+  QString canonicalImageFileName() { return imageFile; }
+
+  bool save();
+  bool loadImage(const QString &fileName);
+  bool loadBoxes(const QString &fileName);
   void setBolded(bool v);
   void setItalic(bool v);
   void setUnderline(bool v);
@@ -51,19 +54,15 @@ public:
   void splitSymbol();
   void joinSymbol();
   void deleteSymbol();
-  QString userFriendlyCurrentFile();
 
 private slots:
   void documentWasModified();
   void emitBoxChanged();
   void drawSelectionRects();
-//  void updateModel(QStandardItem *);
 
 protected:
   void closeEvent(QCloseEvent *event);
-
   bool maybeSave();
-
   void setCurrentImageFile(const QString &fileName);
   void setCurrentBoxFile(const QString &fileName);
 
@@ -78,11 +77,7 @@ protected:
   QGraphicsView *imageView;
   QGraphicsItem * imageItem;
   QGraphicsRectItem *imageSelectionRect;
-/*
-  QGraphicsScene *textScene;
-  QGraphicsView *textView;
-  QGraphicsRectItem *textSelectionRect;
-//*/
+
   QTableView *table;
 
   QAbstractItemModel *model;
