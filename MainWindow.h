@@ -22,6 +22,7 @@ QT_BEGIN_NAMESPACE
 class QAction;
 class QMenu;
 class QTabWidget;
+class QSignalMapper;
 QT_END_NAMESPACE
 
 class MainWindow: public QMainWindow
@@ -54,6 +55,8 @@ private slots:
     void shortcuts();
     void handleClose(int i);
     void updateMenus();
+    void updateViewMenu();
+    void updateCommandActions();
 
 private:
     ChildWidget *activeChild();
@@ -64,6 +67,8 @@ private:
     void writeSettings();
 
     QTabWidget *tabWidget;
+
+    QSignalMapper *windowMapper;
 
     QMenu *fileMenu;
     QMenu *editMenu;
@@ -79,16 +84,18 @@ private:
     QAction *saveAct;
     QAction *closeAct;
     QAction *closeAllAct;
-    QAction *nextAct;
-    QAction *previousAct;
-
     QAction *exitAct;
+
     QAction *boldAct;
     QAction *italicAct;
+    QAction *underlineAct;
+
     QAction *zoomInAct;
     QAction *zoomOutAct;
+    QAction *nextAct;
+    QAction *previousAct;
+    QAction *separatorAct;
 
-    QAction *underlineAct;
     QAction *splitAct;
     QAction *joinAct;
     QAction *deleteAct;

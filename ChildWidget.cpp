@@ -17,12 +17,33 @@
 
 ChildWidget::ChildWidget(QWidget * parent) : QSplitter(Qt::Vertical, parent)
 {
-  textEdit = new QPlainTextEdit;
+  model = new QStandardItemModel(0, 8, this);
+  model->setHeaderData(0, Qt::Horizontal, tr("Letter"));
+  model->setHeaderData(1, Qt::Horizontal, tr("Top"));
+  model->setHeaderData(2, Qt::Horizontal, tr("Bottom"));
+  model->setHeaderData(3, Qt::Horizontal, tr("Left"));
+  model->setHeaderData(4, Qt::Horizontal, tr("Right"));
+  model->setHeaderData(5, Qt::Horizontal, tr("Italic"));
+  model->setHeaderData(6, Qt::Horizontal, tr("Bold"));
+  model->setHeaderData(7, Qt::Horizontal, tr("Underline"));
+
+  connect(model, SIGNAL(itemChanged ( QStandardItem * ) ), this, SLOT(emitBoxChanged()));
+
   scene = new QGraphicsScene;
   view = new QGraphicsView(scene);
 
   addWidget(view);
-  addWidget(textEdit);
+
+  table = new QTableView;
+  table->setModel(model);
+  selectionModel = new QItemSelectionModel(model);
+  connect(selectionModel, SIGNAL(selectionChanged ( const QItemSelection & , const QItemSelection &  ) ), this, SLOT(emitBoxChanged()));
+  table->setSelectionModel(selectionModel);
+  table->verticalHeader()->hide();
+  table->setSelectionBehavior(QAbstractItemView::SelectItems);
+  table->setSelectionMode(QAbstractItemView::SingleSelection);
+
+  addWidget(table);
 
   modified = false;
   bold = false;
@@ -66,12 +87,44 @@ bool ChildWidget::loadBoxes(const QString &fileName)
 
   QTextStream in(&file);
   QApplication::setOverrideCursor(Qt::WaitCursor);
-  textEdit->setPlainText(in.readAll());
+  QString line;
+  int row = 0;
+  do {
+    line = in.readLine();
+    if (!line.isEmpty()) {
+
+      model->insertRow(row, QModelIndex());
+      QStringList pieces = line.split(" ", QString::SkipEmptyParts);
+      QString letter = pieces.value(0);
+      bool bold = false, italic = false, underline = false;
+      if (letter.at(0) == '@') {
+        bold = true;
+        letter.remove(0, 1);
+      }
+      if (letter.at(0) == '$') {
+        italic = true;
+        letter.remove(0, 1);
+      }
+      if (letter.at(0) == '\'') {
+        underline = true;
+        letter.remove(0, 1);
+      }
+      model->setData(model->index(row, 0, QModelIndex()), letter);
+      model->setData(model->index(row, 1, QModelIndex()), pieces.value(1).toInt());
+      model->setData(model->index(row, 2, QModelIndex()), pieces.value(2).toInt());
+      model->setData(model->index(row, 3, QModelIndex()), pieces.value(3).toInt());
+      model->setData(model->index(row, 4, QModelIndex()), pieces.value(4).toInt());
+      model->setData(model->index(row, 5, QModelIndex()), italic);
+      model->setData(model->index(row, 6, QModelIndex()), bold);
+      model->setData(model->index(row, 7, QModelIndex()), underline);
+      row++;
+    }
+  } while (!line.isEmpty());
+  table->resizeColumnsToContents();
+  file.close();
   QApplication::restoreOverrideCursor();
 
   setCurrentBoxFile(fileName);
-
-  connect(textEdit, SIGNAL(textChanged()), this, SLOT(documentWasModified()));
 
   return true;
 }
@@ -98,6 +151,62 @@ bool ChildWidget::save()
   return true;
 }
 
+bool ChildWidget::isBoxSelected()
+{
+  return selectionModel->hasSelection();
+}
+
+bool ChildWidget::isBold()
+{
+  QModelIndex index = selectionModel->currentIndex();
+  if (index.isValid()) {
+    return model->index(index.row(), 6).data().toBool();
+  }
+  return false;
+}
+
+bool ChildWidget::isItalic()
+{
+  QModelIndex index = selectionModel->currentIndex();
+  if (index.isValid()) {
+    return model->index(index.row(), 5).data().toBool();
+  }
+  return false;
+}
+
+bool ChildWidget::isUnderLine()
+{
+  QModelIndex index = selectionModel->currentIndex();
+  if (index.isValid()) {
+    return model->index(index.row(), 7).data().toBool();
+  }
+  return false;
+}
+
+void ChildWidget::setBolded(bool v)
+{
+  QModelIndex index = selectionModel->currentIndex();
+  if (index.isValid()) {
+    model->setData(model->index(index.row(), 6, QModelIndex()), v);
+  }
+}
+
+void ChildWidget::setItalic(bool v)
+{
+  QModelIndex index = selectionModel->currentIndex();
+  if (index.isValid()) {
+    model->setData(model->index(index.row(), 5, QModelIndex()), v);
+  }
+}
+
+void ChildWidget::setUnderline(bool v)
+{
+  QModelIndex index = selectionModel->currentIndex();
+  if (index.isValid()) {
+    model->setData(model->index(index.row(), 7, QModelIndex()), v);
+  }
+}
+
 void ChildWidget::zoomIn()
 {
   view->scale(1.2, 1.2);
@@ -122,8 +231,10 @@ void ChildWidget::joinSymbol()
 
 void ChildWidget::deleteSymbol()
 {
-  //TODO
-  QMessageBox::information(this, "", tr("Delete symbol in %1").arg(userFriendlyCurrentFile()));
+  QModelIndex index = selectionModel->currentIndex();
+  if (index.isValid()) {
+    model->removeRow(index.row());
+  }
 }
 
 QString ChildWidget::userFriendlyCurrentFile()
@@ -133,6 +244,11 @@ QString ChildWidget::userFriendlyCurrentFile()
 void ChildWidget::documentWasModified()
 {
   modified = true;
+}
+
+void ChildWidget::emitBoxChanged()
+{
+  emit boxChanged();
 }
 
 void ChildWidget::closeEvent(QCloseEvent *event)

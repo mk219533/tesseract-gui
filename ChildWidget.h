@@ -18,9 +18,11 @@
 #include <QSplitter>
 
 QT_BEGIN_NAMESPACE
-class QPlainTextEdit;
 class QGraphicsScene;
 class QGraphicsView;
+class QAbstractItemModel;
+class QItemSelectionModel;
+class QTableView;
 QT_END_NAMESPACE
 
 class ChildWidget : public QSplitter
@@ -34,12 +36,13 @@ public:
   bool loadBoxes(const QString &fileName);
   bool save();
   bool isModified() { return modified; }
-  bool isBold() { return bold; }
-  bool isItalic() { return italic; }
-  bool isUnderLine() { return underline; }
-  void setBolded(bool v) { bold = v; }
-  void setItalic(bool v) { italic = v; }
-  void setUnderline(bool v) { underline = v; }
+  bool isBoxSelected();
+  bool isBold();
+  bool isItalic();
+  bool isUnderLine();
+  void setBolded(bool v);
+  void setItalic(bool v);
+  void setUnderline(bool v);
   void zoomIn();
   void zoomOut();
   void splitSymbol();
@@ -49,21 +52,28 @@ public:
 
 private slots:
     void documentWasModified();
+    void emitBoxChanged();
 
 protected:
-    void closeEvent(QCloseEvent *event);
+  void closeEvent(QCloseEvent *event);
 
-    bool maybeSave();
+  bool maybeSave();
 
-    void setCurrentImageFile(const QString &fileName);
-    void setCurrentBoxFile(const QString &fileName);
+  void setCurrentImageFile(const QString &fileName);
+  void setCurrentBoxFile(const QString &fileName);
 
-    QString strippedName(const QString &fullFileName);
+  QString strippedName(const QString &fullFileName);
+
+signals:
+  void boxChanged();
 
 protected:
   QGraphicsScene *scene;
   QGraphicsView *view;
-  QPlainTextEdit *textEdit;
+  QTableView *table;
+
+  QAbstractItemModel *model;
+  QItemSelectionModel *selectionModel;
 
   QString imageFile;
   QString boxFile;

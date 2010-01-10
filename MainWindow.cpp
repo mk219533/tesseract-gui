@@ -27,9 +27,13 @@ MainWindow::MainWindow()
 
   setCentralWidget(tabWidget);
 
+  windowMapper = new QSignalMapper(this);
+  connect(windowMapper, SIGNAL(mapped(int)), tabWidget, SLOT(setCurrentIndex(int)));
+
   createActions();
   createMenus();
   createToolBars();
+  updateMenus();
   readSettings();
   setUnifiedTitleAndToolBarOnMac(true);
 }
@@ -64,7 +68,8 @@ void MainWindow::open()
     ChildWidget *child = new ChildWidget;
     if (child->loadImage(imageFile)) {
       statusBar()->showMessage(tr("File loaded"), 2000);
-      tabWidget->addTab(child, child->userFriendlyCurrentFile());
+      tabWidget->setCurrentIndex(tabWidget->addTab(child, child->userFriendlyCurrentFile()));
+      connect(child, SIGNAL(boxChanged()), this, SLOT(updateCommandActions()));
     } else {
       child->close();
     }
@@ -197,9 +202,57 @@ void MainWindow::handleClose(int i)
 void MainWindow::updateMenus()
 {
   saveAct->setEnabled((activeChild()) ? activeChild()->isModified() : false);
+  closeAct->setEnabled(activeChild() != 0);
+  closeAllAct->setEnabled(activeChild() != 0);
+  nextAct->setEnabled(activeChild() != 0);
+  previousAct->setEnabled(activeChild() != 0);
+  separatorAct->setVisible(activeChild() != 0);
+  zoomInAct->setEnabled(activeChild() != 0);
+  zoomOutAct->setEnabled(activeChild() != 0);
+  updateCommandActions();
+}
+
+void MainWindow::updateCommandActions()
+{
+  bool enable = (activeChild()) ? activeChild()->isBoxSelected() : false;
+  boldAct->setEnabled(enable);
   boldAct->setChecked((activeChild()) ? activeChild()->isBold() : false);
+  italicAct->setEnabled(enable);
   italicAct->setChecked((activeChild()) ? activeChild()->isItalic() : false);
+  underlineAct->setEnabled(enable);
   underlineAct->setChecked((activeChild()) ? activeChild()->isUnderLine() : false);
+  splitAct->setEnabled(enable);
+  joinAct->setEnabled(enable);
+  deleteAct->setEnabled(enable);
+}
+
+void MainWindow::updateViewMenu()
+{
+  viewMenu->clear();
+  viewMenu->addAction(nextAct);
+  viewMenu->addAction(previousAct);
+  viewMenu->addSeparator();
+  viewMenu->addAction(zoomInAct);
+  viewMenu->addAction(zoomOutAct);
+  viewMenu->addAction(separatorAct);
+
+  separatorAct->setVisible(tabWidget->count() > 0);
+
+  for (int i = 0; i < tabWidget->count(); ++i) {
+    ChildWidget *child = qobject_cast<ChildWidget *> (tabWidget->widget(i));
+
+    QString text;
+    if (i < 9) {
+      text = tr("&%1 %2").arg(i + 1).arg(child->userFriendlyCurrentFile());
+    } else {
+      text = tr("%1 %2").arg(i + 1) .arg(child->userFriendlyCurrentFile());
+    }
+    QAction *action = viewMenu->addAction(text);
+    action->setCheckable(true);
+    action ->setChecked(child == activeChild());
+    connect(action, SIGNAL(triggered()), windowMapper, SLOT(map()));
+    windowMapper->setMapping(action, i);
+  }
 }
 
 void MainWindow::createActions()
@@ -224,16 +277,6 @@ void MainWindow::createActions()
   closeAllAct->setShortcut(tr("Ctrl+Shift+W"));
   closeAllAct->setStatusTip(tr("Close all the tabs"));
   connect(closeAllAct, SIGNAL(triggered()), this, SLOT(closeAllTabs()));
-
-  nextAct = new QAction(tr("Ne&xt"), this);
-  nextAct->setShortcuts(QKeySequence::NextChild);
-  nextAct->setStatusTip(tr("Move the focus to the next window"));
-  connect(nextAct, SIGNAL(triggered()), this, SLOT(nextTab()));
-
-  previousAct = new QAction(tr("Pre&vious"), this);
-  previousAct->setShortcuts(QKeySequence::PreviousChild);
-  previousAct->setStatusTip(tr("Move the focus to the previous window"));
-  connect(previousAct, SIGNAL(triggered()), this, SLOT(previousTab()));
 
   exitAct = new QAction(tr("E&xit"), this);
   exitAct->setShortcut(tr("Ctrl+Q"));
@@ -262,6 +305,20 @@ void MainWindow::createActions()
   zoomOutAct = new QAction(QIcon(":/images/zoomout.png"), tr("Zoom &out"), this);
   zoomOutAct->setShortcut(QKeySequence::ZoomOut);
   connect(zoomOutAct, SIGNAL(triggered()), this, SLOT(zoomOut()));
+
+  nextAct = new QAction(tr("Ne&xt"), this);
+  nextAct->setShortcuts(QKeySequence::NextChild);
+  nextAct->setStatusTip(tr("Move the focus to the next window"));
+  connect(nextAct, SIGNAL(triggered()), this, SLOT(nextTab()));
+
+  previousAct = new QAction(tr("Pre&vious"), this);
+  previousAct->setShortcuts(QKeySequence::PreviousChild);
+  previousAct->setStatusTip(tr("Move the focus to the previous window"));
+  connect(previousAct, SIGNAL(triggered()), this, SLOT(previousTab()));
+
+  separatorAct = new QAction(this);
+  separatorAct->setSeparator(true);
+
 
   splitAct = new QAction(tr("&Split symbol"), this);
   splitAct->setShortcut(tr("Ctrl+2"));
@@ -301,11 +358,8 @@ void MainWindow::createMenus()
     editMenu->addAction(underlineAct);
 
     viewMenu = menuBar()->addMenu(tr("&View"));
-    viewMenu->addAction(nextAct);
-    viewMenu->addAction(previousAct);
-    viewMenu->addSeparator();
-    viewMenu->addAction(zoomInAct);
-    viewMenu->addAction(zoomOutAct);
+    updateViewMenu();
+    connect(viewMenu, SIGNAL(aboutToShow()), this, SLOT(updateViewMenu()));
 
     commandMenu = menuBar()->addMenu(tr("&Command"));
     commandMenu->addAction(splitAct);
