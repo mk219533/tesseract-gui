@@ -13,6 +13,7 @@
  */
 
 #include <QApplication>
+#include <QTextCodec>
 
 #include "MainWindow.h"
 
@@ -21,6 +22,7 @@ int main(int argc, char *argv[])
     Q_INIT_RESOURCE(application);
 
     QApplication app(argc, argv);
+    QTextCodec::setCodecForTr(QTextCodec::codecForName("UTF-8"));
     MainWindow mainWin;
     mainWin.show();
     for (int i = 1; i < argc; ++i) {

@@ -104,6 +104,7 @@ bool ChildWidget::loadBoxes(const QString &fileName)
   }
 
   QTextStream in(&file);
+  in.setCodec("UTF-8");
   QApplication::setOverrideCursor(Qt::WaitCursor);
   QString line;
   int row = 0;
@@ -163,6 +164,7 @@ bool ChildWidget::save()
   }
 
   QTextStream out(&file);
+  out.setCodec("UTF-8");
   QApplication::setOverrideCursor(Qt::WaitCursor);
 
   for (int row = 0; row < model->rowCount(); ++row) {
