@@ -1,6 +1,6 @@
 project ( tesseract-gui )
  
-cmake_minimum_required(VERSION 2.6.0)
+cmake_minimum_required(VERSION 2.4.0)
 
 add_definitions ( -Wall )
 add_definitions ( -g -ggdb )

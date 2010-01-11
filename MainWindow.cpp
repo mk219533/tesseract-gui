@@ -20,8 +20,12 @@
 MainWindow::MainWindow()
 {
   tabWidget = new QTabWidget;
+
+  #if QT_VERSION >= 0x040500
   tabWidget->setTabsClosable(true);
   tabWidget->setMovable(true);
+  #endif
+
   connect(tabWidget, SIGNAL(tabCloseRequested(int)), this, SLOT(handleClose(int)));
   connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(updateMenus()));
   connect(tabWidget, SIGNAL(currentChanged(int)), this, SLOT(updateCommandActions()));

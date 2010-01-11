@@ -18,12 +18,10 @@
 #include <QMainWindow>
 
 class ChildWidget;
-QT_BEGIN_NAMESPACE
 class QAction;
 class QMenu;
 class QTabWidget;
 class QSignalMapper;
-QT_END_NAMESPACE
 
 class MainWindow: public QMainWindow
 {

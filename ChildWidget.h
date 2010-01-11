@@ -17,7 +17,6 @@
 
 #include <QSplitter>
 
-QT_BEGIN_NAMESPACE
 class QGraphicsScene;
 class QGraphicsView;
 class QAbstractItemModel;
@@ -25,7 +24,6 @@ class QItemSelectionModel;
 class QTableView;
 class QGraphicsItem;
 class QGraphicsRectItem;
-QT_END_NAMESPACE
 
 class ChildWidget : public QSplitter
 {
