@@ -35,3 +35,26 @@ make
 
 You can run tesseract-gui typing:
 ./tesseract-gui
+
+
+WINDOWS
+
+The same as on Linux, download and install:
+- c++ compiler (you can use MinGW or Visual Studio for example)
+- Qt4 libraries (for MinGW or Visual Studio)
+- cmake
+
+Ensure you have all of them added to you PATH environment variable.
+Open command line and enter root directory of tesseract-gui project.
+
+If you are using MinGW type:
+mkdir build
+cd build
+cmake -G"MinGW Makefiles" ..
+make
+
+If you want to use Visual Studio you cen generate project files by invoking
+cmake -G"<Suitable cmake generator>" 
+
+To see all generators that cmake provide run cmake without any parameters
+
