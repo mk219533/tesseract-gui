@@ -9,7 +9,7 @@ Installing cmake
 
 You can install cmake either from binary packages you can find on project home page (http://www.cmake.org/cmake/resources/software.html)
 or from packages prepared to your Linux distribution.
-On Ubuntu: 
+On Ubuntu/Debian: 
 sudo apt-get install cmake
 On Fedora:
 sudo yum install cmake
@@ -19,10 +19,10 @@ Installing Qt4
 Similarly to cmake, you can install Qt4 in two ways:
 - Download source package from product home page and follow installation instructions.
 - Install suitable package using your package manager.
-On Ubuntu:
+On Ubuntu/Debian:
 sudo apt-get install libqt4-dev
 On Fedora:
-sudo yum install
+sudo yum install qt-devel
 
 
 Building tesseract-gui
